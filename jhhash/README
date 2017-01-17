@@ -1,0 +1,20 @@
+This is an implementation of the JH hash function in Python.
+
+http://en.wikipedia.org/wiki/JH_(hash_function)
+http://ehash.iaik.tugraz.at/wiki/JH
+http://www3.ntu.edu.sg/home/wuhj/research/jh/
+
+It is designed as a reference implementation, with almost no concessions
+made for speed besides memoization of a few functions. As a result I
+discovered an error in the original JH spec/implementation which has since
+been corrected. Run "jhtest" to test the implementation against the JH test
+vectors.
+
+You can find the latest version here:
+
+http://hg.opensource.lshift.net/jh-slow-python/
+
+January 2012
+Paul Crowley
+LShift Ltd
+http://www.lshift.net/

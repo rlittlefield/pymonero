@@ -1,0 +1,81 @@
+#!/usr/bin/python
+
+# Implementation of the JH hash function
+# Paul Crowley, paul@lshift.net, 2008
+# JH: http://icsd.i2r.a-star.edu.sg/staff/hongjun/jh/
+
+from __future__ import with_statement
+
+import jhhash
+
+import math
+import re
+import random
+
+
+def rctest():
+    with open("round_constants.txt") as f:
+        for i, l in zip(range(36), f):
+            c = jhhash.JH_c(8, i)
+            l = l.rstrip()
+            ml = "%2d %064x" % (i, jhhash.bigend_toint(c))
+            if l != ml:
+                print(ml)
+                print(l)
+
+def eexpandtest(d):
+    for i in range(4<<d):
+        r = [0] * (4<<d)
+        r[i] = 1
+        q = jhhash.eunpack(d, r)
+        rt = jhhash.epack(d, q)
+        if rt != r:
+            print(r)
+            print(q)
+            print(rt)
+        #print "%2d" % i, q
+        r = [random.randint(0,1) for i in r]
+        q = jhhash.eunpack(d, r)
+        rt = jhhash.epack(d, q)
+        if rt != r:
+            print(r)
+            print(q)
+            print(rt)
+
+def h0test():
+    h0256 =  0xc968b8e2c53a596e427e45ef1d7ae6e56145b7d906711f7a2fc7617806a922017b2991c1b91929e2c42b4ce18cc5a2d66220beca901b5ddfd3b205638ea7ac5f143e8cba6d313104b0e70054905272714cce321e075de5101ba800ece20251789f5772795fd104a5f0b8b63425f5b2381670fa3e5f907f17e28fc064e769ac90
+    t = jhhash.bigend_toint(jhhash.JH_H0(8, 256))
+    if t != h0256:
+        print(hex(t))
+
+def fromhex(s):
+    return [b for n in s for b in jhhash.bigend_tobin(4, int(n,16))]
+
+def kattest(digestlen):
+    print("Testing %d bit hash" % digestlen)
+    with open("ShortMsgKAT_%d.txt" % digestlen) as f:
+        d = {}
+        for l in f:
+            if re.match(r"\s*#", l):
+                continue
+            m = re.match(r"\s*(\w+)\s+=\s+(\S+)", l)
+            if m:
+                k, v = m.group(1), m.group(2)
+                d[k]=v
+                if k == "MD":
+                    m = fromhex(d["Msg"])
+                    msglen = int(d["Len"])
+                    m = m[:msglen]
+                    print(m)
+                    digest = jhhash.hashbits(digestlen, m)
+                    kat = fromhex(d["MD"])
+                    if digest != kat:
+                        print("%3d %5d: bad" % (digestlen, msglen))
+
+
+h0test()
+rctest()
+eexpandtest(5)
+for kat in [224, 256, 384, 512]:
+    kattest(kat)
+

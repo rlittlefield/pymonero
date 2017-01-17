@@ -1,0 +1,4 @@
+groestl-hash==1.0
+pyblake2==0.9.3
+pysha3==1.0.0
+pyskein==1.0

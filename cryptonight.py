@@ -168,7 +168,6 @@ def run(start):
 
     round_keys = make_round_keys(state_bytes[32:64])
 
-
     '''
     From Spec:
         "Bytes 64..191 are extracted from the Keccak state and XORed with the
@@ -208,9 +207,18 @@ def run(start):
         then applied to the Keccak state, and the resulting hash is the
         output of CryptoNight."
     '''
-    hex_message = binascii.hexlify(state_bytes).decode()
-    keccak_result = keccak.Keccak((len(hex_message)//2, hex_message))
-    state = keccak_result[1]
+
+    # Reconstitute the keccak internal state with the modifications made to state_bytes
+    state_ints = [int.from_bytes(bytes(state_bytes[i:i+8]), 'little') for i in range(0, len(state_bytes), 8)]
+    new_state = [
+        state_ints[0:5],
+        state_ints[5:10],
+        state_ints[10:15],
+        state_ints[15:20],
+        state_ints[20:25]
+    ]
+    # KeccakF is just a single permutation
+    state = keccak.KeccakF(new_state)
     state_bytes = bytearray()
     count = 0
     for i in range(5):

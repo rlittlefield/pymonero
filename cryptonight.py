@@ -102,7 +102,8 @@ def run(start):
     block_bytes = state_bytes[64:192]
     # pair every 16 bytes
     last_blocks = [block_bytes[i:i+16] for i in range(0, len(block_bytes), 16)]
-
+    print('number of blocks:')
+    print(len(last_blocks))
     '''
     From Spec:
         "Each block is encrypted using the following procedure:
@@ -111,11 +112,12 @@ def run(start):
                   block = aes_round(block, round_keys[i])"
     '''
     scratchpad = bytearray()
-
+    iters = 0
     while len(scratchpad) < 2097152:
+        iters += 1
         base = len(scratchpad)
         new_blocks = []
-        for i, two_bytes in enumerate(last_blocks):
+        for y, two_bytes in enumerate(last_blocks):
             # From Spec:
             #     The bytes 64..191 are extracted from the Keccak final state and split into 8 blocks of 16 bytes each.
             #     Note that
@@ -127,10 +129,14 @@ def run(start):
             # so I dropped in a lookup table for the galois multiplication from
             # https://raw.githubusercontent.com/caller9/pythonaes/master/aespython/aes_tables.py
             # It was MIT licensed.
-            encrypted_block = aes.aes_round(block, round_keys[i])
-            scratchpad[base+(i*16):base+(i*16+16)] = encrypted_block
-            new_blocks.append(encrypted_block)
+            for i in range(10):
+                block = aes.aes_round(block, round_keys[i])
+            scratchpad[base+(y*16):base+(y*16+16)] = block
+            new_blocks.append(block)
         last_blocks = new_blocks
+        print(scratchpad)
+    print('iterations: ' + str(iters))
+    print('should be ' + str(2097152 / 128))
 
 
 
@@ -227,36 +233,48 @@ def run(start):
             count += 8
 
     first_byte = state_bytes[0]
+    print(bin(first_byte))
+    print('skein!')
+    hex_digest = skein.skein256(bytes(state_bytes)).hexdigest()
+    print(hex_digest)
+    print('jh!')
+    raw_hash = jhhash.hashbytes(256, bytes(state_bytes))
+    hex_digest = binascii.hexlify(raw_hash)
+    print(hex_digest)
+    print('Groestl!')
+    raw_hash = groestl_hash.getPoWHash(bytes(state_bytes))
+    hex_digest = binascii.hexlify(raw_hash)
+    print(hex_digest)
+    print('blake!')
+    hex_digest = pyblake2.blake2s(bytes(state_bytes), digest_size=32).hexdigest()
+    print(hex_digest)
 
     if (first_byte & 3) == 3:
         # skein
         print('skein!')
         hex_digest = skein.skein256(bytes(state_bytes)).hexdigest()
-        pass
     elif (first_byte & 2) == 2:
         # JH
         print('jh!')
         raw_hash = jhhash.hashbytes(256, bytes(state_bytes))
         hex_digest = binascii.hexlify(raw_hash)
-        pass
     elif (first_byte & 1) == 1:
         # Groestl
         print('Groestl!')
         raw_hash = groestl_hash.getPoWHash(bytes(state_bytes))
         hex_digest = binascii.hexlify(raw_hash)
-        pass
     else:
         # blake
         print('blake!')
         hex_digest = pyblake2.blake2s(bytes(state_bytes), digest_size=32).hexdigest()
-        pass
 
     return hex_digest
 
 
 start = b'This is a test'
 digest = run(start)
-print(digest)
+print('should be:')
+print('a084f01d1437a09c6985401b60d43554ae105802c5f5d8a9b3253649c0be6605')
 
 
 

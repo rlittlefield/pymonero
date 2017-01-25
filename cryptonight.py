@@ -131,10 +131,9 @@ def run(start):
             # It was MIT licensed.
             for i in range(10):
                 block = aes.aes_round(block, round_keys[i])
-            scratchpad[base+(y*16):base+(y*16+16)] = block
+            scratchpad[base+(y*16):base+((y*16)+16)] = block
             new_blocks.append(block)
         last_blocks = new_blocks
-        print(scratchpad)
     print('iterations: ' + str(iters))
     print('should be ' + str(2097152 / 128))
 
@@ -185,14 +184,12 @@ def run(start):
     # block_bytes already has the correct bytes loaded from the state
 
     last_bytes = block_bytes
-    round_key_index = 0
     for position in range(0, 2097152, 128):
         sp_128 = scratchpad[position:position+128]
-        xord = [i ^ y for i, y in zip(last_bytes, sp_128)]
-        last_bytes = aes.aes_round(xord, round_keys[round_key_index])
-        round_key_index += 1
-        if round_key_index > 9:
-            round_key_index = 0
+        last_bytes = [i ^ y for i, y in zip(last_bytes, sp_128)]
+        for i in range(10):
+            last_bytes = aes.aes_round(last_bytes, round_keys[i])
+
 
     '''
     From Spec:
